@@ -1,13 +1,29 @@
 cmake_minimum_required(VERSION 3.10)
-project(hxr_mqtt)
+project(DLR_subs)
 
-option(hxr_mqtt_wrapper "mqtt wrapper for hxr team" ON)
-option(hxr_mqtt_wrapper_test "test project using hxr_mqtt_wrapper" ON)
+# C++ 표준 설정
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-if(hxr_mqtt_wrapper)
-    add_subdirectory(mqtt_wrapper)
-endif()
+# 소스 파일과 헤더 파일 포함
+set(SOURCE_FILES
+    src/Test/Test1.cpp
+    src/main.cpp
+)
 
-if(hxr_mqtt_wrapper_test)
-    add_subdirectory(example)
-endif()
+set(HEADER_FILES
+    include/Test/Test1.hpp
+)
+
+# 실행 파일 생성
+add_executable(${PROJECT_NAME} ${SOURCE_FILES} ${HEADER_FILES})
+
+# 헤더 파일 디렉토리 추가
+target_include_directories(${PROJECT_NAME} PRIVATE include)
+
+# Mosquitto 라이브러리 설정
+# 서브모듈 경로 지정
+add_subdirectory(lib/mosquitto)
+
+# Mosquitto 라이브러리 링크
+target_link_libraries(${PROJECT_NAME} PRIVATE mosquitto)
