@@ -2,6 +2,9 @@
 
 #include <mosquitto.h>
 #include <string>
+#include <vector>
+
+#include <chrono>
 
 class MQTTSubscriber {
 public:
@@ -16,6 +19,11 @@ private:
     std::string topic_;
     struct mosquitto* mosq_;
     Parser& queueConsumer;
+
+    // debug0
+    std::chrono::_V2::steady_clock::time_point tik;
+    std::chrono::_V2::steady_clock::time_point tak;
+    // debug-1
 
     void init();
     static void onMessageWrapper(struct mosquitto* mosq, void* userdata, const struct mosquitto_message* message);

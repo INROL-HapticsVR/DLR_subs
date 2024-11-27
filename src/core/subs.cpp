@@ -46,11 +46,15 @@ void MQTTSubscriber::init() {
         mosquitto_lib_cleanup();
         return;
     }
+
+    // dg0
+    tik = std::chrono::steady_clock::now();
 }
 
 void MQTTSubscriber::onMessageWrapper(struct mosquitto* mosq, void* userdata, const struct mosquitto_message* message) {
     if (!userdata) return;
     auto* self = static_cast<MQTTSubscriber*>(userdata);
+
     self->onMessage(message);
 }
 
@@ -60,4 +64,11 @@ void MQTTSubscriber::onMessage(const struct mosquitto_message* message) {
         std::string payload(static_cast<char*>(message->payload), message->payloadlen);
         queueConsumer.push(topic, payload); // 메시지를 큐에 추가
     }
+
+    //dg1
+    tak = std::chrono::steady_clock::now();
+    // 실행 시간 계산 및 출력 (밀리초 단위)
+    auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(tak - tik);
+    std::cout << "[Debug] FPS: " << topic_ << ": "<< 1000/duration.count() << " FPS" << std::endl;
+    tik = tak;
 }

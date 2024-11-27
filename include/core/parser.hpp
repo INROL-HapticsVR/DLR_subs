@@ -8,8 +8,8 @@
 #include <iostream>
 
 # define BUFFER_NUM 2
-# define WIDTH 512
-# define HEIGHT 512
+# define WIDTH 1280
+# define HEIGHT 720
 
 struct image_rgb_t {
     int width = WIDTH;
@@ -33,7 +33,9 @@ public:
     void displayRGBImage();
     void displayDepthImage();
 
+    std::string topic;
     std::string payload;
+
     int64_t time;
     image_rgb_t rgb;
     image_d_t depth;

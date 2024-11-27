@@ -5,24 +5,27 @@
 #include <opencv2/opencv.hpp> // OpenCV의 모든 기본 모듈 포함
 #include <opencv2/highgui.hpp> // GUI 창을 위한 모듈
 #include <opencv2/imgproc.hpp> // 이미지 처리 모듈
+#include <chrono>
 
 void Parser::push(const std::string& topic, const std::string& payload) {
     std::lock_guard<std::mutex> lock(queueMutex);
-
-    // 큐가 가득 차면 가장 오래된 데이터 제거
-    if (messageQueue.size() >= MAX_QUEUE_SIZE) {
+    // 큐가 가득 차면 오래된 데이터를 제거
+    while (messageQueue.size() >= MAX_QUEUE_SIZE) {
         messageQueue.pop_front();
+        std::cout << "[Debug] Dropped old message for topic: " << topic << std::endl;
     }
-
+    // 새로운 데이터를 추가
     messageQueue.emplace_back(topic, payload);
-    queueCondition.notify_one(); // 대기 중인 쓰레드에 알림
+    queueCondition.notify_one(); // 소비 스레드에 알림
 }
 
 std::pair<std::string, std::string> Parser::pop() {
     std::unique_lock<std::mutex> lock(queueMutex);
-    queueCondition.wait(lock, [this]() { return !messageQueue.empty(); }); // 큐가 비어있으면 대기
-    auto message = messageQueue.front();
-    messageQueue.pop_front();
+    queueCondition.wait(lock, [&]() { return !messageQueue.empty(); }); // 큐가 비어있으면 대기
+
+    // 최신 데이터 우선 접근
+    auto message = messageQueue.back(); // 가장 최신 데이터 가져오기
+    messageQueue.pop_back();            // 최신 데이터 제거
     return message;
 }
 
@@ -32,14 +35,28 @@ void Parser::consume() {
 
     while (true) {
         auto message = pop(); // 큐에서 메시지 가져오기
-        const auto& topic = message.first;
-        const auto& payload = message.second;
+
+        // const auto& topic = message.first;
+        // const auto& payload = message.second;
+        topic = message.first;
+        payload = message.second;
+
+        // dg0
+        auto tik = std::chrono::steady_clock::now();
 
         parsing(payload);
+
+
+
         displayRGBImage();
         displayDepthImage();
 
-        //debug
+        //dg1
+        auto tak = std::chrono::steady_clock::now();
+        // 실행 시간 계산 및 출력 (밀리초 단위)
+        auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(tak - tik);
+        std::cout << "[Debug] parser time: " << topic << ": "<< duration.count() << " ms" << std::endl;
+        //debug-1
     }
 }
 
@@ -72,7 +89,7 @@ void Parser::displayRGBImage() {
     }
 
     // 이미지 표시
-    cv::imshow("RGB Image", image);
+    cv::imshow("RGB Image "+topic, image);
     cv::waitKey(1); // 1ms 대기 (실시간 처리)
 }
 
@@ -88,6 +105,6 @@ void Parser::displayDepthImage() {
     }
 
     // 이미지 표시
-    cv::imshow("Depth Image", depthImage);
+    cv::imshow("Depth Image "+topic, depthImage);
     cv::waitKey(1); // 1ms 대기 (실시간 처리)
 }
