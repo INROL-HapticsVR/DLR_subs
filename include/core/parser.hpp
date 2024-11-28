@@ -6,10 +6,20 @@
 #include <string>
 #include <condition_variable>
 #include <iostream>
+#include <cstdint>
+#include <array>
 
-# define BUFFER_NUM 2
+// # define BUFFER_NUM 2
+// # define USE_RENDERING
 # define WIDTH 1280
 # define HEIGHT 720
+
+struct image_shared {
+    int width = WIDTH;
+    int height = HEIGHT;
+    std::array<uint8_t, WIDTH * HEIGHT> r, g, b;   // RGB 데이터
+    std::array<uint8_t, WIDTH * HEIGHT> depth;    // Depth 데이터
+};
 
 struct image_rgb_t {
     int width = WIDTH;
@@ -25,15 +35,18 @@ struct image_d_t {
 
 class Parser {
 public:
-    void push(const std::string& topic, const std::string& payload);
-    std::pair<std::string, std::string> pop();
+    Parser(int topic);
+    ~Parser();
+
+    void push(const std::string& payload);
+    std::string pop();
 
     void consume();
     void parsing(std::string payload);
     void displayRGBImage();
     void displayDepthImage();
 
-    std::string topic;
+    std::string topic_idx;
     std::string payload;
 
     int64_t time;
@@ -41,10 +54,9 @@ public:
     image_d_t depth;
 
 private:
-    static constexpr size_t MAX_QUEUE_SIZE = BUFFER_NUM;
-    std::deque<std::pair<std::string, std::string>> messageQueue;
-    std::mutex queueMutex;
-    std::condition_variable queueCondition;
+    std::string latestPayload;            // 가장 최근의 메시지
+    std::mutex dataMutex;                 // 데이터 보호를 위한 mutex
+    std::condition_variable dataCondition;
 };
 
 #endif // PARSER_HPP

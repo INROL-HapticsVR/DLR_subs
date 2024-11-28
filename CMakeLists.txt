@@ -46,5 +46,5 @@ set(SOURCES
 # 실행 파일 생성
 add_executable(${PROJECT_NAME} ${SOURCES})
 
-# Mosquitto, OpenCV 및 pthread 라이브러리 링크
-target_link_libraries(${PROJECT_NAME} PRIVATE mosquitto pthread ${OpenCV_LIBS})
+# Mosquitto, OpenCV, pthread 및 librt 라이브러리 링크
+target_link_libraries(${PROJECT_NAME} PRIVATE mosquitto pthread ${OpenCV_LIBS} rt)
