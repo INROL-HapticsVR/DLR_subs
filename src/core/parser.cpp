@@ -15,6 +15,7 @@
 
 Parser::Parser(int topic) {
     topic_idx = std::to_string(topic);
+    shm_name = "img_rendered_" + topic_idx;
 }
 
 Parser::~Parser() {}
@@ -42,7 +43,7 @@ void Parser::consume() {
 
         auto tak = std::chrono::steady_clock::now();
         auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(tak - tik);
-        std::cout << "[Debug] Parser time: " << topic_idx << ": " << duration.count() << " ms" << std::endl;
+        // std::cout << "[Debug] Parser time: " << topic_idx << ": " << duration.count() << " ms" << std::endl;
     }
 }
 
@@ -72,46 +73,42 @@ void Parser::parsing(std::string payload) {
     } else {
         throw std::runtime_error("Invalid payload size.");
     }
+
 #else
     // 데이터를 바이너리에서 구조체로 변환
     std::memcpy(&time, &payload[0], sizeof(int64_t)); // 첫 8바이트를 int64_t로 변환
 
-    // Shared memory 이름
-    std::string shm_name = "img_rendered_" + topic_idx;
-
     // Shared memory 생성 및 설정
-    int shm_fd = shm_open(shm_name.c_str(), O_CREAT | O_RDWR, 0666);
+    shm_fd = shm_open(shm_name.c_str(), O_CREAT | O_RDWR, 0666);
     if (shm_fd == -1) {
         throw std::runtime_error("Failed to create shared memory.");
     }
 
-    size_t shm_size = sizeof(image_shared);
+    size_t shm_size = 4 * WIDTH * HEIGHT * sizeof(uint8_t); // shared memory 크기 계산
     if (ftruncate(shm_fd, shm_size) == -1) {
         throw std::runtime_error("Failed to set shared memory size.");
     }
 
     // Shared memory 매핑
-    void* shm_ptr = mmap(0, shm_size, PROT_WRITE, MAP_SHARED, shm_fd, 0);
+    auto* shm_ptr = static_cast<uint8_t*>(mmap(0, shm_size, PROT_WRITE, MAP_SHARED, shm_fd, 0));
     if (shm_ptr == MAP_FAILED) {
         throw std::runtime_error("Failed to map shared memory.");
     }
 
     // Shared memory 데이터 저장
-    auto* shared_img = static_cast<image_shared*>(shm_ptr);
-
-    // 하림씨가 BGR로 준다도르
     for (int i = 0; i < WIDTH * HEIGHT; ++i) {
-        shared_img->r[i] = static_cast<uint8_t>(payload[8 + 4 * i + 2]);  // R
-        shared_img->g[i] = static_cast<uint8_t>(payload[8 + 4 * i + 1]);  // G
-        shared_img->b[i] = static_cast<uint8_t>(payload[8 + 4 * i + 0]);  // B
-        shared_img->depth[i] = static_cast<uint8_t>(payload[8 + 4 * i + 3]);  // Depth
+        shm_ptr[4 * i + 0] = payload[8 + 4 * i + 2]; // R
+        shm_ptr[4 * i + 1] = payload[8 + 4 * i + 1]; // G
+        shm_ptr[4 * i + 2] = payload[8 + 4 * i + 0]; // B
+        shm_ptr[4 * i + 3] = payload[8 + 4 * i + 3]; // Depth
     }
 
-    // Shared memory 동기화 및 정리
+    // Shared memory 동기화
     if (msync(shm_ptr, shm_size, MS_SYNC) == -1) {
         throw std::runtime_error("Failed to sync shared memory.");
     }
 
+    // Shared memory 정리
     if (munmap(shm_ptr, shm_size) == -1) {
         throw std::runtime_error("Failed to unmap shared memory.");
     }

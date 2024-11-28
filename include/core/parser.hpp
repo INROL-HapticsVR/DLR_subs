@@ -10,14 +10,16 @@
 #include <array>
 
 // # define BUFFER_NUM 2
-// # define USE_RENDERING
-# define WIDTH 1280
-# define HEIGHT 720
+# define USE_RENDERING
+# define WIDTH 256
+# define HEIGHT 256
 
 struct image_shared {
-    int width = WIDTH;
-    int height = HEIGHT;
-    std::array<uint8_t, WIDTH * HEIGHT> r, g, b;   // RGB 데이터
+    // int width = WIDTH;
+    // int height = HEIGHT;
+    std::array<uint8_t, WIDTH * HEIGHT> r;   // RGB 데이터
+    std::array<uint8_t, WIDTH * HEIGHT> g;
+    std::array<uint8_t, WIDTH * HEIGHT> b;
     std::array<uint8_t, WIDTH * HEIGHT> depth;    // Depth 데이터
 };
 
@@ -48,6 +50,13 @@ public:
 
     std::string topic_idx;
     std::string payload;
+
+    // shared memory
+    std::string shm_name;
+    int shm_fd;
+    size_t shm_size;
+    uint8_t* shm_ptr;
+
 
     int64_t time;
     image_rgb_t rgb;
