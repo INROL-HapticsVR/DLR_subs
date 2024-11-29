@@ -8,8 +8,8 @@ int main() {
     // MQTT 브로커 정보 및 토픽 정의
     std::string broker_address = "192.168.0.7";
     int port = 1883;
-    std::vector<std::string> topics = {"topic/camera2", "topic/camera1", "topic/camera0"};
-    // std::vector<std::string> topics = {"topic/camera0"};
+    // std::vector<std::string> topics = {"topic/camera2", "topic/camera1", "topic/camera0"};
+    std::vector<std::string> topics = {"topic/camera0"};
     // Parser와 MQTTSubscriber 객체를 동적으로 관리
     std::vector<std::unique_ptr<Parser>> queueConsumers;
     std::vector<std::unique_ptr<MQTTSubscriber>> subscribers;

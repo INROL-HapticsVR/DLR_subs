@@ -10,9 +10,9 @@
 #include <array>
 
 // # define BUFFER_NUM 2
-# define USE_RENDERING
-# define WIDTH 256
-# define HEIGHT 256
+// # define USE_RENDERING
+# define WIDTH 1200
+# define HEIGHT 680
 
 struct image_shared {
     // int width = WIDTH;
@@ -57,7 +57,7 @@ public:
     size_t shm_size;
     uint8_t* shm_ptr;
 
-
+    int activeBuffer;               // 활성 버퍼 인덱스 (0 또는 1)
     int64_t time;
     image_rgb_t rgb;
     image_d_t depth;

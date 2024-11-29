@@ -19,7 +19,7 @@ MQTTSubscriber::~MQTTSubscriber() {
 void MQTTSubscriber::subscribe() {
     mosquitto_message_callback_set(mosq_, MQTTSubscriber::onMessageWrapper);
 
-    if (mosquitto_subscribe(mosq_, nullptr, topic_.c_str(), 0) != MOSQ_ERR_SUCCESS) {
+    if (mosquitto_subscribe(mosq_, nullptr, topic_.c_str(), 1) != MOSQ_ERR_SUCCESS) {
         std::cerr << "Failed to subscribe to topic: " << topic_ << std::endl;
         return;
     }
@@ -29,8 +29,8 @@ void MQTTSubscriber::subscribe() {
     // Non-blocking loop
     int ret = mosquitto_loop_start(mosq_);
     if (ret != MOSQ_ERR_SUCCESS) {
-        std::cerr << "Mosquitto loop start failed with error: " << ret << std::endl;
-    }
+         std::cerr << "Mosquitto loop start failed with error: " << ret << std::endl;
+     }
 }
 
 void MQTTSubscriber::init() {
@@ -62,20 +62,13 @@ void MQTTSubscriber::onMessageWrapper(struct mosquitto* mosq, void* userdata, co
 }
 
 void MQTTSubscriber::onMessage(const struct mosquitto_message* message) {
-    // // dbg0
-    // tik = std::chrono::steady_clock::now(); 
-
     if (message->payloadlen > 0) {
-        std::string topic(message->topic);
-        std::string payload(static_cast<char*>(message->payload), message->payloadlen);
-        queueConsumer.push(payload); // 메시지를 큐에 추가
+        queueConsumer.push(std::string(static_cast<char*>(message->payload), message->payloadlen)); 
     }
-
-    //dbg1
+    
+    // 현재 시간 기록 (디버깅용)
     tak = std::chrono::steady_clock::now();
-    // 실행 시간 계산 및 출력 (밀리초 단위)
     auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(tak - tik);
-    std::cout << "[Debug] Time: " << topic_ << ": "<< duration.count() << " ms" << std::endl;
-    // std::cout << "[Debug] FPS: " << topic_ << ": "<< 1000/duration.count() << " FPS" << std::endl;
+    std::cout << "[Debug] Time: " << topic_ << ": " << duration.count() << " ms" << std::endl;
     tik = tak;
 }
